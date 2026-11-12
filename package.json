@@ -20,7 +20,8 @@
     "seed:export": "tsx scripts/seed-export.ts",
     "video:set": "tsx scripts/video-set.ts",
     "video:unset": "tsx scripts/video-unset.ts",
-    "video:refresh": "tsx scripts/video-refresh.ts"
+    "video:refresh": "tsx scripts/video-refresh.ts",
+    "db:copy-to-neon": "tsx scripts/db-copy-to-neon.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.117",

@@ -19,6 +19,12 @@ async function createDb(): Promise<Db> {
     const { drizzle } = await import("drizzle-orm/neon-http");
     return drizzle(neon(url), { schema }) as unknown as Db;
   }
+  if (process.env.VERCEL) {
+    throw new Error(
+      "Falta DATABASE_URL: en Vercel no hay base local. Cargá la cadena de conexión de Neon " +
+        "(postgresql://...) en Settings → Environment Variables y volvé a desplegar.",
+    );
+  }
   const { PGlite } = await import("@electric-sql/pglite");
   const { drizzle } = await import("drizzle-orm/pglite");
   const dir = process.env.PGLITE_DIR ?? "./.data/pglite";

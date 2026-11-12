@@ -103,6 +103,15 @@ Editá `data/overrides.json` (la clave es el id del dataset o el slug) y corré 
 | `npm run video:set` / `video:unset` | Video elegido a mano |
 | `npm run video:refresh` | Vuelve a buscar videos automáticos |
 
+## Pasar tu base local a Neon
+
+Si ya trabajaste en local (traducciones, fichas generadas, videos e imágenes elegidos), copiá todo a Neon sin volver a llamar a la IA:
+
+1. En `.env.local`, agregá `NEON_DATABASE_URL=` con la cadena de Neon (dejá `DATABASE_URL` vacío).
+2. Cerrá `npm run dev` y corré `npm run db:copy-to-neon`.
+
+Se puede repetir: actualiza lo que ya existe. Las imágenes subidas desde tu PC se suben a Vercel Blob si tenés `BLOB_READ_WRITE_TOKEN`.
+
 ## Deploy en Vercel + Neon
 
 1. Creá un proyecto en [Neon](https://neon.com/) y copiá la cadena de conexión con pooling.
