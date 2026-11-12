@@ -1,0 +1,1 @@
+ALTER TABLE "exercises" ADD COLUMN "images_edited" boolean DEFAULT false NOT NULL;

@@ -1,0 +1,55 @@
+{
+  "name": "repe",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/db-migrate.ts",
+    "setup": "npm run db:migrate && npm run seed:import && npm run seed:overrides",
+    "seed:import": "tsx scripts/seed-import.ts",
+    "seed:overrides": "tsx scripts/seed-overrides.ts",
+    "seed:translate": "tsx scripts/seed-translate.ts",
+    "seed:enrich": "tsx scripts/seed-enrich.ts",
+    "seed:export": "tsx scripts/seed-export.ts",
+    "video:set": "tsx scripts/video-set.ts",
+    "video:unset": "tsx scripts/video-unset.ts",
+    "video:refresh": "tsx scripts/video-refresh.ts"
+  },
+  "dependencies": {
+    "@ai-sdk/google": "^4.0.117",
+    "@electric-sql/pglite": "^0.5.16",
+    "@neondatabase/serverless": "^1.2.0",
+    "@vercel/blob": "^2.9.0",
+    "ai": "^7.0.169",
+    "drizzle-orm": "^0.45.4",
+    "minisearch": "^7.2.0",
+    "next": "16.4.6",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "4.3.3",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv": "^18.0.10",
+    "drizzle-kit": "^0.31.11",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.6",
+    "tailwindcss": "4.3.3",
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^5.1.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

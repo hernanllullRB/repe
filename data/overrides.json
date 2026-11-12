@@ -1,0 +1,352 @@
+{
+  "$comentario": "Correcciones manuales. Clave: id del dataset (source_id) o slug. Campos: nameEs, aliases, youtubeVideoId (URL o ID). Se aplica con: npm run seed:overrides",
+  "Arnold_Dumbbell_Press": {
+    "nameEs": "Press Arnold",
+    "aliases": [
+      "arnold press",
+      "press arnold con mancuernas",
+      "press arnold sentado"
+    ],
+    "youtubeVideoId": "AjB-UXErljM"
+  },
+  "Kettlebell_Arnold_Press": {
+    "nameEs": "Press Arnold con pesa rusa",
+    "aliases": [
+      "arnold press kettlebell"
+    ]
+  },
+  "Barbell_Squat": {
+    "nameEs": "Sentadilla con barra",
+    "aliases": [
+      "sentadilla",
+      "sentadilla trasera",
+      "back squat",
+      "squat"
+    ]
+  },
+  "Bodyweight_Squat": {
+    "nameEs": "Sentadilla sin peso",
+    "aliases": [
+      "sentadilla libre",
+      "air squat",
+      "sentadilla con peso corporal"
+    ]
+  },
+  "Goblet_Squat": {
+    "nameEs": "Sentadilla goblet",
+    "aliases": [
+      "sentadilla copa",
+      "goblet squat"
+    ]
+  },
+  "Front_Barbell_Squat": {
+    "nameEs": "Sentadilla frontal",
+    "aliases": [
+      "front squat",
+      "sentadilla frontal con barra"
+    ]
+  },
+  "Barbell_Deadlift": {
+    "nameEs": "Peso muerto",
+    "aliases": [
+      "peso muerto convencional",
+      "deadlift"
+    ]
+  },
+  "Romanian_Deadlift": {
+    "nameEs": "Peso muerto rumano",
+    "aliases": [
+      "rdl",
+      "romanian deadlift",
+      "peso muerto piernas rigidas"
+    ]
+  },
+  "Sumo_Deadlift": {
+    "nameEs": "Peso muerto sumo",
+    "aliases": [
+      "sumo deadlift"
+    ]
+  },
+  "Pullups": {
+    "nameEs": "Dominadas",
+    "aliases": [
+      "pull up",
+      "pull ups",
+      "dominadas pronas"
+    ]
+  },
+  "Chin-Up": {
+    "nameEs": "Dominadas supinas",
+    "aliases": [
+      "chin up",
+      "dominadas con agarre supino"
+    ]
+  },
+  "Barbell_Bench_Press_-_Medium_Grip": {
+    "nameEs": "Press de banca",
+    "aliases": [
+      "press banca",
+      "press de pecho",
+      "bench press",
+      "press plano con barra"
+    ]
+  },
+  "Barbell_Incline_Bench_Press_-_Medium_Grip": {
+    "nameEs": "Press inclinado con barra",
+    "aliases": [
+      "press de banca inclinado",
+      "incline bench press"
+    ]
+  },
+  "Dumbbell_Bench_Press": {
+    "nameEs": "Press de banca con mancuernas",
+    "aliases": [
+      "press plano con mancuernas",
+      "dumbbell bench press"
+    ]
+  },
+  "Dumbbell_Flyes": {
+    "nameEs": "Aperturas con mancuernas",
+    "aliases": [
+      "aperturas",
+      "flyes",
+      "aperturas planas"
+    ]
+  },
+  "Butterfly": {
+    "nameEs": "Aperturas en máquina",
+    "aliases": [
+      "peck deck",
+      "contractora",
+      "mariposa"
+    ]
+  },
+  "Pushups": {
+    "nameEs": "Flexiones de brazos",
+    "aliases": [
+      "flexiones",
+      "lagartijas",
+      "push up",
+      "push ups"
+    ]
+  },
+  "Dips_-_Triceps_Version": {
+    "nameEs": "Fondos en paralelas",
+    "aliases": [
+      "fondos",
+      "dips",
+      "fondos para triceps"
+    ]
+  },
+  "Bench_Dips": {
+    "nameEs": "Fondos en banco",
+    "aliases": [
+      "fondos de triceps en banco",
+      "bench dips"
+    ]
+  },
+  "Barbell_Hip_Thrust": {
+    "nameEs": "Hip thrust",
+    "aliases": [
+      "empuje de cadera",
+      "hip thrust con barra"
+    ]
+  },
+  "Barbell_Glute_Bridge": {
+    "nameEs": "Puente de glúteos con barra",
+    "aliases": [
+      "puente de gluteos",
+      "glute bridge"
+    ]
+  },
+  "Bent_Over_Barbell_Row": {
+    "nameEs": "Remo con barra",
+    "aliases": [
+      "remo inclinado con barra",
+      "barbell row"
+    ],
+    "youtubeVideoId": "b8FgtZlyEd4"
+  },
+  "One-Arm_Dumbbell_Row": {
+    "nameEs": "Remo con mancuerna a una mano",
+    "aliases": [
+      "remo serrucho",
+      "remo unilateral",
+      "dumbbell row"
+    ]
+  },
+  "Seated_Cable_Rows": {
+    "nameEs": "Remo sentado en polea",
+    "aliases": [
+      "remo bajo",
+      "remo en polea baja",
+      "seated row"
+    ]
+  },
+  "Wide-Grip_Lat_Pulldown": {
+    "nameEs": "Jalón al pecho",
+    "aliases": [
+      "polea al pecho",
+      "lat pulldown",
+      "jalon dorsal"
+    ]
+  },
+  "Barbell_Curl": {
+    "nameEs": "Curl de bíceps con barra",
+    "aliases": [
+      "curl con barra",
+      "curl de biceps",
+      "barbell curl"
+    ]
+  },
+  "Dumbbell_Bicep_Curl": {
+    "nameEs": "Curl de bíceps con mancuernas",
+    "aliases": [
+      "curl con mancuernas",
+      "curl de biceps"
+    ]
+  },
+  "Hammer_Curls": {
+    "nameEs": "Curl martillo",
+    "aliases": [
+      "hammer curl",
+      "curl martillo con mancuernas"
+    ]
+  },
+  "Triceps_Pushdown": {
+    "nameEs": "Extensión de tríceps en polea",
+    "aliases": [
+      "triceps en polea",
+      "pushdown",
+      "jalon de triceps"
+    ]
+  },
+  "Standing_Military_Press": {
+    "nameEs": "Press militar",
+    "aliases": [
+      "press militar con barra",
+      "overhead press",
+      "press de hombros con barra"
+    ]
+  },
+  "Dumbbell_Shoulder_Press": {
+    "nameEs": "Press de hombros con mancuernas",
+    "aliases": [
+      "press de hombros",
+      "shoulder press"
+    ]
+  },
+  "Side_Lateral_Raise": {
+    "nameEs": "Elevaciones laterales",
+    "aliases": [
+      "vuelos laterales",
+      "laterales con mancuernas",
+      "lateral raise"
+    ]
+  },
+  "Face_Pull": {
+    "nameEs": "Face pull",
+    "aliases": [
+      "jalon a la cara",
+      "tiron a la cara"
+    ]
+  },
+  "Barbell_Shrug": {
+    "nameEs": "Encogimientos de hombros con barra",
+    "aliases": [
+      "encogimientos",
+      "shrugs",
+      "trapecio con barra"
+    ]
+  },
+  "Leg_Press": {
+    "nameEs": "Prensa de piernas",
+    "aliases": [
+      "prensa",
+      "leg press",
+      "prensa 45"
+    ]
+  },
+  "Leg_Extensions": {
+    "nameEs": "Extensión de cuádriceps",
+    "aliases": [
+      "sillon de cuadriceps",
+      "leg extension",
+      "extensiones de piernas"
+    ]
+  },
+  "Lying_Leg_Curls": {
+    "nameEs": "Curl femoral acostado",
+    "aliases": [
+      "camilla de isquios",
+      "curl de isquiotibiales",
+      "leg curl"
+    ]
+  },
+  "Seated_Leg_Curl": {
+    "nameEs": "Curl femoral sentado",
+    "aliases": [
+      "isquios sentado",
+      "seated leg curl"
+    ]
+  },
+  "Dumbbell_Lunges": {
+    "nameEs": "Estocadas con mancuernas",
+    "aliases": [
+      "estocadas",
+      "zancadas",
+      "lunges"
+    ]
+  },
+  "Dumbbell_Step_Ups": {
+    "nameEs": "Subidas al cajón con mancuernas",
+    "aliases": [
+      "step up",
+      "subidas al banco"
+    ]
+  },
+  "Standing_Calf_Raises": {
+    "nameEs": "Elevación de talones de pie",
+    "aliases": [
+      "gemelos de pie",
+      "pantorrillas",
+      "calf raise"
+    ]
+  },
+  "Plank": {
+    "nameEs": "Plancha",
+    "aliases": [
+      "plancha abdominal",
+      "plank"
+    ]
+  },
+  "Crunches": {
+    "nameEs": "Abdominales crunch",
+    "aliases": [
+      "abdominales",
+      "crunch",
+      "encogimientos abdominales"
+    ]
+  },
+  "Hanging_Leg_Raise": {
+    "nameEs": "Elevación de piernas colgado",
+    "aliases": [
+      "elevaciones de piernas en barra",
+      "hanging leg raise"
+    ]
+  },
+  "Russian_Twist": {
+    "nameEs": "Giro ruso",
+    "aliases": [
+      "russian twist",
+      "giros rusos"
+    ]
+  },
+  "Mountain_Climbers": {
+    "nameEs": "Escaladores",
+    "aliases": [
+      "mountain climbers",
+      "escalador"
+    ]
+  }
+}
