@@ -3,9 +3,12 @@ import type { z } from "zod";
 import { config } from "./config";
 import {
   exerciseContentSchema,
+  groupScanByDay,
   resolveSchema,
+  routineScanSchema,
   translationBatchSchema,
   type ExerciseContent,
+  type RoutineScan,
 } from "./schemas";
 import { EQUIPMENT_VALUES, LEVEL_VALUES, MUSCLE_VALUES } from "./taxonomy";
 
@@ -144,15 +147,78 @@ export async function classifyQuery(query: string) {
       aliases: [],
       primaryMuscles: [],
       secondaryMuscles: [],
-      equipment: null,
-      level: null,
+      equipment: "",
+      level: "",
     };
   }
   const system = `Recibís lo que un usuario escribió en el buscador de una app de ejercicios de gimnasio.
 Decidí si es un ejercicio físico real y reconocible (isExercise). Si no lo es, devolvé isExercise=false y el resto vacío.
 Si lo es, devolvé su nombre canónico en español (como se dice en Argentina) y en inglés, alias comunes y su clasificación.
 Músculos: usá solo valores de esta lista: ${MUSCLE_VALUES.join(", ")}.
-Equipamiento: uno de: ${EQUIPMENT_VALUES.join(", ")}, o null.
-Nivel: uno de: ${LEVEL_VALUES.join(", ")}, o null.`;
+Equipamiento: uno de: ${EQUIPMENT_VALUES.join(", ")}, o vacío.
+Nivel: uno de: ${LEVEL_VALUES.join(", ")}, o vacío.`;
   return generate(resolveSchema, system, `Búsqueda: "${query}"`);
+}
+
+// ---------------------------------------------------------------------------
+// Rutina desde una foto o captura de pantalla
+
+const SCAN_SYSTEM = `Leés fotos y capturas de pantalla de rutinas de gimnasio (planillas, apps, notas, pizarras) escritas en español.
+Devolvé todos los ejercicios en el orden en que aparecen; en "day" va el título del día al que pertenece cada uno.
+Reglas:
+- Cada título tipo "Día 3", "Lunes", "Rutina A" o "Piernas" abre un día nuevo. Usá ese texto, igual para todos sus ejercicios.
+- Si arriba de todo hay ejercicios antes del primer título visible (la captura empieza a mitad de un día), su day es "(sin título)".
+- Incluí los bloques de abdominales u otros que estén dentro del día, como ejercicios más.
+- name: el nombre tal como está escrito, sin series ni repeticiones ni aclaraciones entre paréntesis.
+- nameEs: el nombre más común en gimnasios de Argentina. nameEn: el nombre en inglés usado en bases de ejercicios
+  (por ejemplo "sillón de cuádriceps" -> "Leg Extensions", "gemelos en máquina parado" -> "Standing Calf Raises",
+  "cortitos superiores" -> "Crunches", "prensa 90 grados" -> "Vertical Leg Press").
+- sets: solo el número de series. reps: repeticiones compactas ("15 a 10" -> "15-10", "4x30" -> sets "4" y reps "30").
+- sets, reps o notes que no figuren: texto vacío "".
+- notes: aclaraciones o alternativas que figuren en el texto, resumidas.
+- No inventes ejercicios que no estén en la imagen. Si la imagen no es una rutina, devolvé exercises vacío.`;
+
+export async function extractRoutineFromImage(image: Uint8Array, mediaType: string): Promise<RoutineScan> {
+  if (config.aiProvider === "mock") return mockScan();
+  const model = await getModel();
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const { output } = await generateText({
+        model,
+        temperature: 0.1,
+        system: SCAN_SYSTEM,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: "Extraé la rutina de esta imagen." },
+              { type: "file", data: image, mediaType },
+            ],
+          },
+        ],
+        output: Output.object({ schema: routineScanSchema }),
+      });
+      return groupScanByDay(routineScanSchema.parse(output));
+    } catch (error) {
+      lastError = error;
+      // Un 400 no se arregla reintentando.
+      if ((error as { statusCode?: number }).statusCode === 400) break;
+    }
+  }
+  throw lastError;
+}
+
+function mockScan(): RoutineScan {
+  return {
+    days: [
+      {
+        label: "Día 3",
+        exercises: [
+          { name: "Sentadillas c/barra", nameEs: "Sentadilla con barra", nameEn: "Barbell Squat", sets: "5", reps: "15-10", notes: "" },
+          { name: "Sillón de cuádriceps", nameEs: "Extensión de cuádriceps", nameEn: "Leg Extensions", sets: "4", reps: "15-10", notes: "" },
+        ],
+      },
+    ],
+  };
 }

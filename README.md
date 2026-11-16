@@ -59,7 +59,43 @@ Cada ejercicio trae dos fotos del catálogo (inicio y final del movimiento). En 
 
 ## Rutinas
 
-Desde cualquier ficha, "Agregar a mi rutina" guarda el ejercicio (con series y repeticiones opcionales) en una o varias rutinas. En "Mis rutinas" las ves, tildás lo que vas haciendo (los tildes se reinician cada día), reordenás y borrás. Se guardan en el navegador del dispositivo, sin cuenta.
+Desde cualquier ficha, "Agregar a mi rutina" guarda el ejercicio (con series y repeticiones opcionales) en una o varias rutinas. En "Mis rutinas" las ves, tildás lo que vas haciendo (los tildes se reinician cada día), reordenás y borrás. Sin cuenta se guardan en el navegador del dispositivo; con login de Google se guardan en la base (tabla `routines`) y al entrar por primera vez se suben las que había en el navegador.
+
+### Login con Google
+
+1. En [Google Cloud Console](https://console.cloud.google.com/) → APIs y servicios → **Pantalla de consentimiento de OAuth**: configurala como "Externo" (alcances: `openid`, `email`, `profile`).
+2. **Credenciales → Crear credenciales → ID de cliente de OAuth** → tipo "Aplicación web".
+3. En **URI de redireccionamiento autorizados** agregá una por cada lugar donde corra la app:
+   - `http://localhost:3000/api/auth/google/callback`
+   - `https://TU-DOMINIO/api/auth/google/callback` (producción)
+4. Copiá el ID y el secreto en `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` (en `.env.local` y en Vercel) y reiniciá.
+
+Sin esas variables el botón "Entrar" no aparece y todo sigue funcionando sin cuenta. Las tablas `users`, `sessions` y `routines` las crea la migración `0003` (`npm run db:migrate`; con la base local se aplica sola al arrancar).
+
+### Importar una rutina desde una foto
+
+Con sesión iniciada, en "Mis rutinas" → **Importar desde una foto** subís una captura o foto de tu rutina. Gemini lee los días y ejercicios (con series y repeticiones), cada ejercicio se busca en el catálogo y elegís qué día importar; podés corregir el ejercicio elegido, cambiar series/repeticiones o crear la ficha si no existe. Tope por usuario: `SCAN_USER_DAILY_CAP` fotos por día (10 por defecto), además de `LLM_DAILY_CAP`.
+
+#### Fotos que no se leyeron bien
+
+Para mejorar la lectura de rutinas con estructuras distintas (de otros gimnasios, apps o planillas), se guarda la foto junto con lo que leyó la IA cuando:
+
+- la IA falla (`ai_error`) o no encuentra ejercicios (`empty`);
+- la mitad o más de los ejercicios quedan sin coincidencia en el catálogo (`unmatched`);
+- el usuario toca **"¿La lectura salió mal? Avisanos"** en la pantalla de revisión (`reported`, con su comentario);
+- el archivo llega en un formato que no aceptamos (`format`).
+
+Se registra en la tabla `scan_failures` (migración `0004`) y la imagen va a:
+
+- **Tu computadora:** `.data/scan-failures/`.
+- **Producción:** un store de Vercel Blob **privado** aparte (el de las imágenes de ejercicios es público y no se puede cambiar). Crealo en Storage → Create → Blob → acceso *Private* y conectalo al proyecto con el prefijo **`SCAN_FAILURES`** (así crea `SCAN_FAILURES_STORE_ID` y no pisa `BLOB_STORE_ID`/`BLOB_READ_WRITE_TOKEN` del store público). Alternativa: un token fijo en `SCAN_FAILURES_BLOB_TOKEN`. Sin ese token, en Vercel se guarda solo el registro, sin la imagen.
+
+Se guardan hasta 5 por usuario por día y todo se borra a los `SCAN_FAILURES_RETENTION_DAYS` días (30 por defecto). Para verlas:
+
+```bash
+npm run scan:failures                 # las últimas 20, con lo que leyó la IA
+npm run scan:failures -- --download   # baja las imágenes del Blob privado a .data/scan-failures-download
+```
 
 ## Elegir el video a mano desde la terminal
 

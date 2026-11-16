@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { doseLabel, routines, useRoutines } from "@/lib/routines";
 import { ExerciseImage } from "./ExerciseImage";
 import { ArrowDown, ArrowUp, CheckIcon, ChevronLeft, PlusIcon } from "./icons";
@@ -13,6 +13,14 @@ export function RoutineDetail() {
   const list = useRoutines();
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Con cacheComponents la página queda oculta (<Activity>) al navegar: al salir se deja de editar.
+  useLayoutEffect(
+    () => () => {
+      setEditing(false);
+      setConfirmDelete(false);
+    },
+    [],
+  );
 
   const back = (
     <Link
@@ -42,7 +50,10 @@ export function RoutineDetail() {
       <div className="flex flex-col gap-4">
         {back}
         <h1 className="font-display text-3xl font-bold tracking-[-0.03em]">No encontramos esta rutina</h1>
-        <p className="text-muted">Las rutinas se guardan en el dispositivo donde las creaste.</p>
+        <p className="text-muted">
+          Puede que esté guardada en otro dispositivo o en otra cuenta. Si la creaste con tu cuenta de Google, revisá
+          haber iniciado sesión.
+        </p>
       </div>
     );
   }

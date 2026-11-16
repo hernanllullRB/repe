@@ -29,7 +29,13 @@ export async function saveImage(slug: string, file: File): Promise<string> {
 
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     const { put } = await import("@vercel/blob");
-    const blob = await put(`ejercicios/${name}`, file, { access: "public", contentType: file.type });
+    // Token explícito: si el proyecto tiene otro store conectado por OIDC (BLOB_STORE_ID),
+    // las imágenes públicas igual van a este store.
+    const blob = await put(`ejercicios/${name}`, file, {
+      access: "public",
+      contentType: file.type,
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    });
     return blob.url;
   }
 

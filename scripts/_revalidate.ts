@@ -1,3 +1,4 @@
+import { usingPglite } from "../src/db/client";
 /**
  * Las páginas se sirven desde caché. Cuando un script cambia datos, avisa a la
  * app para que invalide esas fichas. Necesita NEXT_PUBLIC_SITE_URL y ADMIN_TOKEN;
@@ -6,8 +7,7 @@
 export async function revalidate(slugs: string[], searchIndex = false, all = false): Promise<void> {
   // Con la base local la app tiene que estar cerrada al correr scripts: al
   // levantarla de nuevo arranca con la caché limpia.
-  const url = process.env.DATABASE_URL;
-  if (!(url && url.startsWith("postgres"))) return;
+  if (usingPglite()) return;
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const token = process.env.ADMIN_TOKEN;
   if (!token) {

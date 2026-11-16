@@ -61,8 +61,9 @@ export const resolveSchema = z.object({
   aliases: z.array(z.string()).max(6),
   primaryMuscles: z.array(z.string()).max(4),
   secondaryMuscles: z.array(z.string()).max(4),
-  equipment: z.string().nullable(),
-  level: z.string().nullable(),
+  // Gemini rechaza los campos que pueden ser null ("type": ["string","null"]): vacío = sin dato.
+  equipment: z.string().describe("Equipamiento, o vacío si no aplica"),
+  level: z.string().describe("Nivel, o vacío si no se sabe"),
 });
 
 /** Entrada de data/overrides.json. */
@@ -90,3 +91,85 @@ export const datasetExerciseSchema = z.object({
   images: z.array(z.string()),
 });
 export type DatasetExercise = z.infer<typeof datasetExerciseSchema>;
+
+// ---------------------------------------------------------------------------
+// Rutinas guardadas en la base
+
+const routineId = z.string().regex(/^[A-Za-z0-9_-]{1,40}$/);
+
+export const routineItemSchema = z.object({
+  slug: z.string().min(1).max(120),
+  name: z.string().min(1).max(120),
+  image: z.string().max(500).nullable(),
+  sets: z.string().max(20).optional(),
+  reps: z.string().max(30).optional(),
+});
+export type RoutineItemData = z.infer<typeof routineItemSchema>;
+
+/** Cuerpo de PUT /api/routines/[id]. */
+export const routineBodySchema = z.object({
+  name: z.string().trim().min(1).max(60),
+  items: z.array(routineItemSchema).max(60),
+  done: z.array(z.string().max(120)).max(60),
+  doneDay: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+});
+
+/** Cuerpo de POST /api/routines/import (rutinas del navegador al iniciar sesión). */
+export const routineImportSchema = z.object({
+  routines: z.array(routineBodySchema.extend({ id: routineId })).max(50),
+});
+
+export function isRoutineId(id: string): boolean {
+  return routineId.safeParse(id).success;
+}
+
+// ---------------------------------------------------------------------------
+// Lectura de una rutina a partir de una foto o captura
+
+/**
+ * Lo que devuelve la IA: una lista plana de ejercicios, cada uno con el día al
+ * que pertenece. Gemini rechaza (400 "invalid argument") los esquemas con una
+ * esquemas con maxItems altos o campos null, así que el tope y la agrupación
+ * por día se hacen en el código.
+ */
+export const routineScanSchema = z.object({
+  exercises: z
+    .array(
+      z.object({
+        day: z
+          .string()
+          .describe('Título del día al que pertenece, tal como aparece ("Día 3"). Si no tiene título visible, "(sin título)"'),
+        name: z.string().describe("Nombre del ejercicio tal como está escrito, sin series ni repeticiones"),
+        nameEs: z
+          .string()
+          .describe('Nombre canónico en español de Argentina, por ejemplo "Extensión de cuádriceps en máquina"'),
+        nameEn: z.string().describe('Nombre canónico en inglés como en bases de ejercicios, por ejemplo "Leg Extensions"'),
+        // Sin .nullable(): Gemini tampoco acepta "type": ["string","null"]. Vacío = sin dato.
+        sets: z.string().describe('Cantidad de series, solo el número: "4". Vacío si no figura'),
+        reps: z.string().describe('Repeticiones compactas: "15-10", "12", "30", "20". Vacío si no figura'),
+        notes: z.string().describe("Aclaraciones del texto (variantes, alternativas), breve. Vacío si no hay"),
+      }),
+    ),
+  // Sin .max(): un maxItems alto también da 400 en Gemini. El tope se aplica en groupScanByDay.
+});
+export type RoutineScanRaw = z.infer<typeof routineScanSchema>;
+
+export type ScannedExercise = Omit<RoutineScanRaw["exercises"][number], "day">;
+export interface RoutineScan {
+  days: { label: string; exercises: ScannedExercise[] }[];
+}
+
+export const MAX_SCANNED_EXERCISES = 120;
+
+/** Agrupa la lista plana por día, respetando el orden en que aparecen. */
+export function groupScanByDay(raw: RoutineScanRaw): RoutineScan {
+  const days: RoutineScan["days"] = [];
+  for (const { day, ...ex } of raw.exercises.slice(0, MAX_SCANNED_EXERCISES)) {
+    const label = day.trim() || "(sin título)";
+    const last = days[days.length - 1];
+    const target = last && last.label === label ? last : days.find((d) => d.label === label);
+    if (target) target.exercises.push(ex);
+    else days.push({ label, exercises: [ex] });
+  }
+  return { days };
+}

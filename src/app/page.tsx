@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Footer, Logo } from "@/components/Chrome";
 import { PopularList } from "@/components/PopularList";
+import { AccountButton } from "@/components/Account";
 import { ResumeRoutine, RoutinesButton } from "@/components/RoutinesHome";
 import { SearchBox } from "@/components/SearchBox";
 
@@ -25,7 +26,10 @@ export default function Home() {
     <>
       <header className="mx-auto flex h-[76px] w-full max-w-[680px] items-center justify-between px-5">
         <Logo />
-        <RoutinesButton />
+        <div className="flex items-center gap-2">
+          <RoutinesButton />
+          <AccountButton />
+        </div>
       </header>
       <main className="mx-auto flex w-full max-w-[680px] flex-1 flex-col gap-6 px-5 md:gap-8 pb-14 pt-4 md:pt-12">
         <h1 className="font-display text-[36px] font-bold leading-[1.05] tracking-[-0.03em] md:text-[56px]">

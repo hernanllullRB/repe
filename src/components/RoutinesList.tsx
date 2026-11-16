@@ -2,16 +2,41 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { routines, useRoutines } from "@/lib/routines";
-import { ChevronRight, PlusIcon } from "./icons";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { routines, useRoutines, useSession, useSyncError } from "@/lib/routines";
+import { GoogleLoginButton } from "./Account";
+import { CameraIcon, ChevronRight, PlusIcon } from "./icons";
 import { RoutineThumbs } from "./RoutineThumbs";
 
 export function RoutinesList() {
   const list = useRoutines();
+  const session = useSession();
+  const syncError = useSyncError();
   const router = useRouter();
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
+  const [loginError, setLoginError] = useState(false);
+
+  // Con cacheComponents, Next oculta la página al navegar (<Activity>) en vez de
+  // desmontarla: al salir se cierra el formulario y se borran los avisos.
+  useLayoutEffect(
+    () => () => {
+      setCreating(false);
+      setName("");
+      setLoginError(false);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    // Vuelta del login con error (?login=error): se avisa y se limpia la URL.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("login") === "error") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- dato que solo existe en el navegador
+      setLoginError(true);
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, []);
 
   if (!list) {
     return (
@@ -23,8 +48,20 @@ export function RoutinesList() {
     );
   }
 
+  const loggedIn = session.status === "user";
+
   return (
     <div className="flex flex-col gap-5">
+      {loginError && (
+        <p role="alert" className="rounded-2xl bg-bad-soft px-4 py-3 text-sm font-semibold text-bad">
+          No pudimos iniciar sesión con Google. Probá de nuevo.
+        </p>
+      )}
+      {syncError && (
+        <p role="status" className="rounded-2xl bg-warn-bg px-4 py-3 text-sm font-semibold text-warn-ink">
+          Hay cambios que todavía no se guardaron en tu cuenta. Revisá la conexión; se vuelve a intentar solo.
+        </p>
+      )}
       {list.length === 0 ? (
         <div className="flex flex-col gap-2 rounded-[18px] border border-line bg-surface p-5">
           <h2 className="font-display text-xl font-bold tracking-[-0.02em]">Todavía no armaste ninguna rutina</h2>
@@ -64,6 +101,8 @@ export function RoutinesList() {
           onSubmit={(e) => {
             e.preventDefault();
             const r = routines.create(name);
+            setCreating(false);
+            setName("");
             router.push(`/rutinas/${r.id}`);
           }}
         >
@@ -96,9 +135,33 @@ export function RoutinesList() {
         </button>
       )}
 
-      <p className="text-[13px] leading-normal text-muted">
-        Tus rutinas se guardan en este dispositivo, sin cuenta. Si borrás los datos del navegador, se pierden.
-      </p>
+      {loggedIn ? (
+        <Link
+          href="/rutinas/importar"
+          className="press flex h-[52px] items-center justify-center gap-2 rounded-2xl border border-line bg-surface text-base font-bold hover:bg-soft"
+        >
+          <CameraIcon />
+          Importar desde una foto
+        </Link>
+      ) : null}
+
+      {loggedIn ? (
+        <p className="text-[13px] leading-normal text-muted">
+          Tus rutinas se guardan en tu cuenta ({session.user?.email}) y las ves en cualquier dispositivo.
+        </p>
+      ) : session.loginEnabled ? (
+        <div className="flex flex-col gap-3 rounded-[18px] bg-soft p-4">
+          <p className="text-[14px] leading-normal">
+            Ahora tus rutinas se guardan solo en este dispositivo. Entrá con Google para tenerlas en tu cuenta,
+            verlas desde cualquier lado e <strong>importar una rutina desde una foto</strong>.
+          </p>
+          <GoogleLoginButton next="/rutinas" />
+        </div>
+      ) : (
+        <p className="text-[13px] leading-normal text-muted">
+          Tus rutinas se guardan en este dispositivo, sin cuenta. Si borrás los datos del navegador, se pierden.
+        </p>
+      )}
     </div>
   );
 }

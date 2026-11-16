@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { SearchIcon } from "./icons";
 import { SearchBox } from "./SearchBox";
 
 /** Botón de búsqueda sobre el video (móvil): abre el buscador arriba de todo. */
 export function SearchSheet() {
   const [open, setOpen] = useState(false);
+  // Con cacheComponents la página queda oculta (<Activity>) al navegar: el buscador se cierra.
+  useLayoutEffect(() => () => setOpen(false), []);
 
   useEffect(() => {
     if (!open) return;

@@ -1,3 +1,4 @@
+import { usingPglite } from "../src/db/client";
 import { config } from "dotenv";
 
 // Mismo orden que Next.js: .env.local pisa a .env
@@ -25,8 +26,7 @@ export function intArg(name: string, fallback: number): number {
  * (DATABASE_URL) no hay problema.
  */
 export async function assertLocalDbFree(): Promise<void> {
-  const url = process.env.DATABASE_URL;
-  if (url && url.startsWith("postgres")) return;
+  if (!usingPglite()) return;
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const ports = new Set([site, "http://localhost:3000"]);
   for (const base of ports) {

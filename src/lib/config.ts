@@ -1,5 +1,5 @@
 /** Configuración leída de variables de entorno, con valores por defecto. */
-function int(name: string, fallback: number): number {
+export function int(name: string, fallback: number): number {
   const raw = process.env[name];
   const n = raw ? Number.parseInt(raw, 10) : Number.NaN;
   return Number.isFinite(n) ? n : fallback;
@@ -29,6 +29,16 @@ export const config = {
   },
   get ipHashSalt() {
     return process.env.IP_HASH_SALT ?? "repe-dev-salt";
+  },
+  get googleClientId() {
+    return process.env.GOOGLE_CLIENT_ID ?? "";
+  },
+  get googleClientSecret() {
+    return process.env.GOOGLE_CLIENT_SECRET ?? "";
+  },
+  /** Fotos de rutinas que cada usuario puede leer con IA por día. */
+  get scanUserDailyCap() {
+    return int("SCAN_USER_DAILY_CAP", 10);
   },
   get siteUrl() {
     return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";

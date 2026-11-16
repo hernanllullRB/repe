@@ -3,7 +3,12 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * Rutinas guardadas en este dispositivo (localStorage), sin cuenta.
+ * Rutinas del usuario.
+ * - Con sesión iniciada (Google) se guardan en la base: la lista se carga de
+ *   /api/routines y cada cambio se aplica al instante en pantalla y se manda
+ *   al servidor en segundo plano, en orden.
+ * - Sin sesión siguen en este dispositivo (localStorage). Al iniciar sesión,
+ *   esas rutinas se suben a la cuenta y se borran del navegador.
  * Cada ejercicio guarda una copia de su nombre e imagen para mostrarse sin
  * consultar al servidor.
  */
@@ -26,47 +31,218 @@ export interface Routine {
   updatedAt: number;
 }
 
+export interface SessionInfo {
+  status: "loading" | "anonymous" | "user";
+  loginEnabled: boolean;
+  user: { name: string | null; email: string; picture: string | null } | null;
+}
+
 const KEY = "repe:rutinas:v1";
-let cache: Routine[] | null = null;
+
+interface State {
+  session: SessionInfo;
+  list: Routine[] | null;
+  /** Hay cambios que no se pudieron guardar en el servidor (se reintenta). */
+  syncError: boolean;
+}
+
+let state: State = {
+  session: { status: "loading", loginEnabled: false, user: null },
+  list: null,
+  syncError: false,
+};
+let started = false;
 const listeners = new Set<() => void>();
+
+function emit() {
+  listeners.forEach((l) => l());
+}
+
+function setState(patch: Partial<State>) {
+  state = { ...state, ...patch };
+  emit();
+}
 
 function today(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function read(): Routine[] {
-  if (cache) return cache;
+/** Los tildes son del día: al día siguiente arrancan de cero. */
+function freshDone(list: Routine[]): Routine[] {
+  const t = today();
+  return list.map((r) => (r.doneDay && r.doneDay !== t ? { ...r, done: [], doneDay: null } : r));
+}
+
+const remote = () => state.session.status === "user";
+
+// ---------------------------------------------------------------------------
+// Almacenamiento local (sin cuenta)
+
+function readLocal(): Routine[] {
   try {
     const raw = localStorage.getItem(KEY);
     const parsed = raw ? (JSON.parse(raw) as Routine[]) : [];
-    cache = Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    cache = [];
+    return [];
   }
-  // Los tildes son del día: al día siguiente arrancan de cero.
-  const t = today();
-  cache = cache.map((r) => (r.doneDay && r.doneDay !== t ? { ...r, done: [], doneDay: null } : r));
-  return cache;
 }
 
-function write(next: Routine[]): void {
-  cache = next;
+function writeLocal(list: Routine[]) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(next));
+    localStorage.setItem(KEY, JSON.stringify(list));
   } catch {
     // Sin espacio o almacenamiento bloqueado: queda en memoria hasta recargar.
   }
-  listeners.forEach((l) => l());
+}
+
+function clearLocal() {
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    // nada
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sincronización con el servidor: una cola por rutina, en orden.
+
+type Op = "put" | "delete";
+const pending = new Map<string, Op>();
+let flushing = false;
+let retries = 0;
+
+/** Lo que se manda al servidor, recortado a los límites que valida la API. */
+function payload(r: Routine) {
+  const clip = (v: string | undefined, n: number) => (v ? v.slice(0, n) : undefined);
+  const items = r.items.slice(0, 60).map((i) => ({
+    slug: i.slug.slice(0, 120),
+    name: (i.name || i.slug).slice(0, 120),
+    image: i.image && i.image.length <= 500 ? i.image : null,
+    sets: clip(i.sets, 20),
+    reps: clip(i.reps, 30),
+  }));
+  return {
+    name: r.name.trim().slice(0, 60) || "Mi rutina",
+    items,
+    done: r.done.filter((s) => items.some((i) => i.slug === s)),
+    doneDay: r.doneDay && /^\d{4}-\d{2}-\d{2}$/.test(r.doneDay) ? r.doneDay : null,
+  };
+}
+
+function body(r: Routine) {
+  return JSON.stringify(payload(r));
+}
+
+async function send(id: string, op: Op): Promise<void> {
+  const url = `/api/routines/${encodeURIComponent(id)}`;
+  if (op === "delete") {
+    const res = await fetch(url, { method: "DELETE" });
+    if (!res.ok && res.status !== 404) throw new Error(`DELETE ${res.status}`);
+    return;
+  }
+  const r = state.list?.find((x) => x.id === id);
+  if (!r) return; // Se borró antes de llegar a mandarse.
+  const res = await fetch(url, { method: "PUT", headers: { "content-type": "application/json" }, body: body(r) });
+  if (res.status === 401) {
+    // La sesión venció: volvemos a preguntar quién es el usuario.
+    started = false;
+    void start();
+    throw new Error("Sesión vencida");
+  }
+  if (!res.ok) throw new Error(`PUT ${res.status}`);
+}
+
+async function flush(): Promise<void> {
+  if (flushing) return;
+  flushing = true;
+  try {
+    while (pending.size > 0) {
+      const [id, op] = pending.entries().next().value as [string, Op];
+      pending.delete(id);
+      try {
+        await send(id, op);
+        retries = 0;
+        if (state.syncError) setState({ syncError: false });
+      } catch (error) {
+        console.error("[rutinas] no se pudo guardar:", error);
+        if (!pending.has(id)) pending.set(id, op);
+        retries++;
+        setState({ syncError: true });
+        if (retries <= 6) setTimeout(() => void flush(), Math.min(30_000, 1000 * 2 ** retries));
+        return;
+      }
+    }
+  } finally {
+    flushing = false;
+  }
+}
+
+function schedule(id: string, op: Op) {
+  // Un borrado reemplaza cualquier guardado pendiente de la misma rutina.
+  pending.delete(id);
+  pending.set(id, op);
+  void flush();
+}
+
+// ---------------------------------------------------------------------------
+// Arranque: quién es el usuario y de dónde salen las rutinas
+
+async function fetchJson<T>(input: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(input, { cache: "no-store", ...init });
+  if (!res.ok) throw new Error(`${input}: ${res.status}`);
+  return (await res.json()) as T;
+}
+
+async function start(): Promise<void> {
+  if (started) return;
+  started = true;
+  let me: { loginEnabled: boolean; user: SessionInfo["user"] };
+  try {
+    me = await fetchJson("/api/auth/me");
+  } catch {
+    me = { loginEnabled: false, user: null };
+  }
+
+  if (!me.user) {
+    setState({
+      session: { status: "anonymous", loginEnabled: me.loginEnabled, user: null },
+      list: freshDone(readLocal()),
+    });
+    return;
+  }
+
+  const session: SessionInfo = { status: "user", loginEnabled: true, user: me.user };
+  try {
+    const local = readLocal().filter((r) => r && typeof r.id === "string" && /^[A-Za-z0-9_-]{1,40}$/.test(r.id));
+    let data: { routines: Routine[] } | null = null;
+    if (local.length) {
+      try {
+        data = await fetchJson<{ routines: Routine[] }>("/api/routines/import", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ routines: local.slice(0, 50).map((r) => ({ id: r.id, ...payload(r) })) }),
+        });
+        clearLocal();
+      } catch (error) {
+        // Quedan en el navegador y se vuelve a intentar en la próxima visita.
+        console.error("[rutinas] no se pudieron subir las rutinas del dispositivo:", error);
+      }
+    }
+    data ??= await fetchJson<{ routines: Routine[] }>("/api/routines");
+    setState({ session, list: freshDone(data.routines) });
+  } catch (error) {
+    console.error("[rutinas] no se pudieron cargar:", error);
+    setState({ session, list: [], syncError: true });
+  }
 }
 
 function subscribe(listener: () => void): () => void {
   listeners.add(listener);
+  void start();
   const onStorage = (e: StorageEvent) => {
-    if (e.key === KEY) {
-      cache = null;
-      listener();
-    }
+    if (e.key === KEY && !remote()) setState({ list: freshDone(readLocal()) });
   };
   window.addEventListener("storage", onStorage);
   return () => {
@@ -75,39 +251,100 @@ function subscribe(listener: () => void): () => void {
   };
 }
 
-/** Lista de rutinas. En el servidor (y en el primer render) devuelve null: todavía no se leyó. */
+/** Lista de rutinas. En el servidor (y mientras carga) devuelve null. */
 export function useRoutines(): Routine[] | null {
   return useSyncExternalStore(
     subscribe,
-    () => read(),
+    () => state.list,
     () => null,
   );
 }
 
+const SERVER_SESSION: SessionInfo = { status: "loading", loginEnabled: false, user: null };
+
+/** Estado del login. */
+export function useSession(): SessionInfo {
+  return useSyncExternalStore(
+    subscribe,
+    () => state.session,
+    () => SERVER_SESSION,
+  );
+}
+
+/** true si hay cambios que todavía no se pudieron guardar en la cuenta. */
+export function useSyncError(): boolean {
+  return useSyncExternalStore(
+    subscribe,
+    () => state.syncError,
+    () => false,
+  );
+}
+
+export function loginUrl(next?: string): string {
+  const path = next ?? (typeof window !== "undefined" ? window.location.pathname + window.location.search : "/rutinas");
+  return `/api/auth/google?next=${encodeURIComponent(path)}`;
+}
+
+export async function signOut(): Promise<void> {
+  await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
+  // Lo pendiente de la cuenta ya no se puede guardar; se vuelve a las rutinas del dispositivo.
+  pending.clear();
+  setState({
+    session: { status: "anonymous", loginEnabled: true, user: null },
+    list: freshDone(readLocal()),
+    syncError: false,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Operaciones
+
+function all(): Routine[] {
+  return state.list ?? [];
+}
+
+function commit(next: Routine[], changed: string[], op: Op = "put") {
+  setState({ list: next });
+  if (remote()) changed.forEach((id) => schedule(id, op));
+  else writeLocal(next);
+}
+
 function newId(): string {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID().slice(0, 8)
-    : Math.random().toString(36).slice(2, 10);
+    ? crypto.randomUUID().replaceAll("-", "").slice(0, 12)
+    : Math.random().toString(36).slice(2, 14);
 }
 
 function update(id: string, fn: (r: Routine) => Routine): void {
-  write(read().map((r) => (r.id === id ? { ...fn(r), updatedAt: Date.now() } : r)));
+  commit(
+    all().map((r) => (r.id === id ? { ...fn(r), updatedAt: Date.now() } : r)),
+    [id],
+  );
 }
 
 export const routines = {
-  all(): Routine[] {
-    return read();
-  },
-  create(name: string): Routine {
-    const r: Routine = { id: newId(), name: name.trim() || "Mi rutina", items: [], done: [], doneDay: null, updatedAt: Date.now() };
-    write([...read(), r]);
+  all,
+  create(name: string, items: RoutineItem[] = []): Routine {
+    const r: Routine = {
+      id: newId(),
+      name: name.trim().slice(0, 60) || "Mi rutina",
+      items,
+      done: [],
+      doneDay: null,
+      updatedAt: Date.now(),
+    };
+    commit([...all(), r], [r.id]);
     return r;
   },
   rename(id: string, name: string) {
-    update(id, (r) => ({ ...r, name: name.trim() || r.name }));
+    update(id, (r) => ({ ...r, name: name.trim().slice(0, 60) || r.name }));
   },
   remove(id: string) {
-    write(read().filter((r) => r.id !== id));
+    commit(
+      all().filter((r) => r.id !== id),
+      [id],
+      "delete",
+    );
   },
   /** Agrega o actualiza un ejercicio en una rutina. */
   upsertItem(id: string, item: RoutineItem) {
@@ -151,4 +388,3 @@ export function doseLabel(item: Pick<RoutineItem, "sets" | "reps">): string | nu
   if (reps) return `${reps} rep.`;
   return null;
 }
-

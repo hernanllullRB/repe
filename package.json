@@ -21,7 +21,8 @@
     "video:set": "tsx scripts/video-set.ts",
     "video:unset": "tsx scripts/video-unset.ts",
     "video:refresh": "tsx scripts/video-refresh.ts",
-    "db:copy-to-neon": "tsx scripts/db-copy-to-neon.ts"
+    "db:copy-to-neon": "tsx scripts/db-copy-to-neon.ts",
+    "scan:failures": "tsx scripts/scan-failures.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.117",

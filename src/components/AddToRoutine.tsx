@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { routines, useRoutines, type Routine } from "@/lib/routines";
 import { ExerciseImage } from "./ExerciseImage";
 import { CheckIcon, PlusIcon } from "./icons";
@@ -13,6 +13,14 @@ export function AddToRoutine({ exercise }: { exercise: Exercise }) {
   const list = useRoutines();
   const [open, setOpen] = useState(false);
   const [saved, setSaved] = useState<Routine[] | null>(null);
+  // Con cacheComponents la página queda oculta (<Activity>) al navegar: al salir se cierra el panel.
+  useLayoutEffect(
+    () => () => {
+      setOpen(false);
+      setSaved(null);
+    },
+    [],
+  );
   const inCount = list?.filter((r) => r.items.some((i) => i.slug === exercise.slug)).length ?? 0;
 
   return (

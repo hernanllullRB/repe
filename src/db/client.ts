@@ -12,9 +12,27 @@ export type Db = PgDatabase<PgQueryResultHKT, typeof schema>;
 
 const globalForDb = globalThis as unknown as { __repeDb?: Promise<Db> };
 
+/**
+ * Cadena de conexión a Postgres, tolerando errores comunes al pegarla:
+ * espacios, comillas o el comando "psql '...'" que muestra Neon.
+ * También acepta POSTGRES_URL (la que crea la integración de Neon en Vercel).
+ */
+export function databaseUrl(): string | null {
+  const raw = (process.env.DATABASE_URL || process.env.POSTGRES_URL || "").trim();
+  if (!raw) return null;
+  const match = raw.match(/postgres(?:ql)?:\/\/[^\s'"]+/);
+  if (!match) {
+    throw new Error(
+      "DATABASE_URL tiene un formato inválido: tiene que ser la cadena de Neon que empieza con postgresql:// " +
+        "(sin comillas ni el comando psql).",
+    );
+  }
+  return match[0];
+}
+
 async function createDb(): Promise<Db> {
-  const url = process.env.DATABASE_URL;
-  if (url && url.startsWith("postgres")) {
+  const url = databaseUrl();
+  if (url) {
     const { neon } = await import("@neondatabase/serverless");
     const { drizzle } = await import("drizzle-orm/neon-http");
     return drizzle(neon(url), { schema }) as unknown as Db;
@@ -22,7 +40,7 @@ async function createDb(): Promise<Db> {
   if (process.env.VERCEL) {
     throw new Error(
       "Falta DATABASE_URL: en Vercel no hay base local. Cargá la cadena de conexión de Neon " +
-        "(postgresql://...) en Settings → Environment Variables y volvé a desplegar.",
+        "(postgresql://...) en Settings → Environment Variables, marcá el entorno Production y volvé a desplegar.",
     );
   }
   const { PGlite } = await import("@electric-sql/pglite");
@@ -48,8 +66,7 @@ export function getDb(): Promise<Db> {
 }
 
 export function usingPglite(): boolean {
-  const url = process.env.DATABASE_URL;
-  return !(url && url.startsWith("postgres"));
+  return !databaseUrl();
 }
 
 export { schema };

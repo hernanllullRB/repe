@@ -22,6 +22,20 @@
       "when": 1794440081980,
       "tag": "0002_images_edited",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794790420454,
+      "tag": "0003_users_routines",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794795161700,
+      "tag": "0004_scan_failures",
+      "breakpoints": true
     }
   ]
 }
