@@ -1,10 +1,10 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { asc, sql } from "drizzle-orm";
+import { asc, inArray, sql } from "drizzle-orm";
 import { getDb } from "../db/client";
 import { exercises } from "../db/schema";
 import { aiConfigured } from "./ai";
 import { needsContent, needsVideoSearch } from "./enrich";
-import { findBySlug, toView, type ExerciseView, type SearchEntry } from "./exercises";
+import { findBySlug, toView, type AlternativeView, type ExerciseView, type SearchEntry } from "./exercises";
 import { youtubeConfigured } from "./youtube";
 
 /** Lecturas cacheadas para las páginas. Se invalidan con revalidateTag. */
@@ -22,7 +22,23 @@ export async function getExerciseView(slug: string): Promise<ExerciseView | null
   if (!ex) return null;
   const needsEnrich =
     (needsContent(ex) && aiConfigured()) || (needsVideoSearch(ex) && youtubeConfigured());
-  return toView(ex, needsEnrich);
+  return { ...toView(ex, needsEnrich), alternatives: await getAlternatives(ex.alternatives) };
+}
+
+/** Datos para mostrar las alternativas, en el orden guardado (se ignoran las que ya no existen). */
+async function getAlternatives(slugs: string[]): Promise<AlternativeView[]> {
+  if (slugs.length === 0) return [];
+  const db = await getDb();
+  const rows = await db
+    .select({
+      slug: exercises.slug,
+      name: exercises.nameEs,
+      equipment: exercises.equipment,
+      image: sql<string | null>`${exercises.images}[1]`,
+    })
+    .from(exercises)
+    .where(inArray(exercises.slug, slugs));
+  return slugs.map((s) => rows.find((r) => r.slug === s)).filter((r): r is AlternativeView => Boolean(r));
 }
 
 export async function getSearchIndex(): Promise<SearchEntry[]> {

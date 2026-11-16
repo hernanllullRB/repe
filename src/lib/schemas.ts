@@ -53,6 +53,21 @@ export const translationBatchSchema = z.object({
   ),
 });
 
+/** Alternativas sugeridas por la IA (seed:alternatives). Sin maxItems: Gemini da 400 con topes altos. */
+export const alternativesBatchSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      alternatives: z.array(
+        z.object({
+          nameEs: z.string().describe("Nombre del ejercicio alternativo como se dice en gimnasios de Argentina"),
+          nameEn: z.string().describe('Nombre en inglés como en bases de ejercicios, por ejemplo "Dumbbell Flyes"'),
+        }),
+      ),
+    }),
+  ),
+});
+
 /** Clasificación de una búsqueda nueva (alta bajo demanda). */
 export const resolveSchema = z.object({
   isExercise: z.boolean().describe("true solo si es un ejercicio físico real y reconocible"),

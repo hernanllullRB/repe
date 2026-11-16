@@ -97,6 +97,8 @@ async function main() {
           youtubeSeconds: sql`excluded.youtube_seconds`,
           youtubeCheckedAt: sql`excluded.youtube_checked_at`,
           reviewed: sql`excluded.reviewed`,
+          alternatives: sql`excluded.alternatives`,
+          alternativesCheckedAt: sql`excluded.alternatives_checked_at`,
           updatedAt: sql`now()`,
         },
       });

@@ -27,6 +27,15 @@ export interface ExerciseView {
   contentStatus: Exercise["contentStatus"];
   video: { id: string; title: string | null; channel: string | null; seconds: number | null } | null;
   needsEnrich: boolean;
+  /** Ejercicios alternativos (otro equipamiento). Se completa en getExerciseView. */
+  alternatives?: AlternativeView[];
+}
+
+export interface AlternativeView {
+  slug: string;
+  name: string;
+  equipment: string | null;
+  image: string | null;
 }
 
 export function toView(ex: Exercise, needsEnrich: boolean): ExerciseView {

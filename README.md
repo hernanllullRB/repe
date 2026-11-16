@@ -41,6 +41,19 @@ npm run seed:enrich -- --limit 50                 # fichas y videos de los 50 pr
 npm run seed:enrich -- --limit 90 --only videos   # solo videos (~90 búsquedas por día de cuota)
 ```
 
+## Ejercicios alternativos
+
+Cada ficha muestra hasta 3 alternativas con otro equipamiento (por ejemplo, polea → mancuernas). Se calculan con:
+
+```bash
+npm run seed:alternatives                  # los que falten (reanudable)
+npm run seed:alternatives -- --limit 40    # solo 40
+npm run seed:alternatives -- --redo        # recalcula todos
+npm run seed:alternatives -- --delay 8000  # más espera entre lotes si Gemini corta por límite por minuto
+```
+
+La IA sugiere nombres en lotes de 20 y cada uno se busca en el catálogo con el mismo buscador que la importación por foto: solo se guardan las coincidencias seguras. Al terminar muestra cuántos quedaron con 3, 2, 1 o ninguna alternativa. Con la base local, cerrá `npm run dev` antes de correrlo; después, `npm run db:copy-to-neon` también copia las alternativas.
+
 ## Panel de administración (`/admin`)
 
 En http://localhost:3000/admin ves todos los ejercicios y les asignás el video que quieras, sin tocar la base ni la terminal.

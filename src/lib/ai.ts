@@ -2,6 +2,7 @@ import { generateText, Output, type LanguageModel } from "ai";
 import type { z } from "zod";
 import { config } from "./config";
 import {
+  alternativesBatchSchema,
   exerciseContentSchema,
   groupScanByDay,
   resolveSchema,
@@ -132,6 +133,38 @@ Usá el nombre que se dice en un gimnasio real (por ejemplo "Barbell Squat" -> "
 Devolvé exactamente un item por cada id recibido, con el mismo id.`;
   const prompt = items.map((i) => `${i.id} | ${i.name}${i.equipment ? ` | ${i.equipment}` : ""}`).join("\n");
   return generate(translationBatchSchema, system, prompt);
+}
+
+// ---------------------------------------------------------------------------
+// Ejercicios alternativos (seed:alternatives)
+
+export interface AlternativesInput {
+  id: string;
+  nameEs: string;
+  nameEn: string;
+  equipment: string | null;
+  muscles: string[];
+}
+
+export async function suggestAlternatives(items: AlternativesInput[]) {
+  if (config.aiProvider === "mock") {
+    return { items: items.map((i) => ({ id: i.id, alternatives: [] as { nameEs: string; nameEn: string }[] })) };
+  }
+  const system = `Sos entrenador personal. Para cada ejercicio de gimnasio, sugerí 4 ejercicios alternativos que trabajen
+lo mismo con un movimiento equivalente pero con OTRO equipamiento (por ejemplo, de polea a mancuernas, de máquina a barra,
+de barra a mancuernas, o con el propio peso). Sirven para cuando la máquina está ocupada o no hay ese equipamiento.
+Reglas:
+- Ejercicios comunes y conocidos, ordenados del más parecido al menos parecido.
+- No repitas el mismo ejercicio ni variantes con el mismo equipamiento.
+- Si es un estiramiento o cardio, sugerí otros del mismo tipo.
+- Devolvé exactamente un item por cada id recibido, con el mismo id.`;
+  const prompt = items
+    .map(
+      (i) =>
+        `${i.id} | ${i.nameEs} (${i.nameEn}) | equipamiento: ${i.equipment ?? "?"} | músculos: ${i.muscles.join(", ") || "?"}`,
+    )
+    .join("\n");
+  return generate(alternativesBatchSchema, system, prompt);
 }
 
 // ---------------------------------------------------------------------------

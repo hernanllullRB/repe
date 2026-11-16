@@ -47,6 +47,10 @@ export const exercises = pgTable("exercises", {
   youtubeSeconds: integer("youtube_seconds"),
   youtubeCheckedAt: timestamp("youtube_checked_at", { withTimezone: true }),
   reviewed: boolean("reviewed").notNull().default(false),
+  /** Slugs de 1 o 2 ejercicios alternativos del catálogo (con otro equipamiento). Los arma npm run seed:alternatives. */
+  alternatives: text("alternatives").array().notNull().default([]),
+  /** Cuándo se buscaron las alternativas (null = falta). */
+  alternativesCheckedAt: timestamp("alternatives_checked_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

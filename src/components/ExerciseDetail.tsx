@@ -7,7 +7,7 @@ import type { ExerciseContent } from "@/lib/schemas";
 import { AddToRoutine } from "./AddToRoutine";
 import { Pill } from "./Chrome";
 import { ExerciseImage } from "./ExerciseImage";
-import { CheckIcon, ChevronLeft } from "./icons";
+import { CheckIcon, ChevronLeft, ChevronRight } from "./icons";
 import { SearchSheet } from "./SearchSheet";
 import { VideoBlock } from "./VideoBlock";
 
@@ -136,6 +136,8 @@ export function ExerciseDetail({ initial }: { initial: ExerciseView }) {
               {phase !== "loading" && <OriginalInstructions steps={view.instructionsEn} />}
             </>
           )}
+          {/* Las alternativas no cambian al completar la ficha: se toman de los datos iniciales. */}
+          <Alternatives items={initial.alternatives ?? []} />
         </div>
       </div>
 
@@ -174,6 +176,38 @@ function Gallery({ name, images, fromCatalog }: { name: string; images: string[]
         </figure>
       ))}
     </div>
+  );
+}
+
+/** Hasta 3 ejercicios que reemplazan a este con otro equipamiento (por si la máquina está ocupada). */
+function Alternatives({ items }: { items: NonNullable<ExerciseView["alternatives"]> }) {
+  if (items.length === 0) return null;
+  return (
+    <section id="alternativas" className="flex flex-col gap-3.5 md:gap-4" aria-labelledby="h-alternativas">
+      <div className="flex flex-col gap-1">
+        <SectionTitle id="h-alternativas">Alternativas</SectionTitle>
+        <p className="text-sm text-muted">Si no tenés el equipamiento o está ocupado, probá con:</p>
+      </div>
+      <ul className="flex flex-col gap-2.5">
+        {items.map((a) => (
+          <li key={a.slug}>
+            <Link
+              href={`/ejercicio/${a.slug}`}
+              className="press flex items-center gap-3 rounded-[18px] border border-line bg-surface p-3 hover:bg-soft/50"
+            >
+              <span className="relative h-14 w-14 flex-none overflow-hidden rounded-xl">
+                <ExerciseImage src={a.image} alt="" sizes="56px" />
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="truncate text-[15px] font-semibold md:text-base">{a.name}</span>
+                {a.equipment && <span className="text-[13px] text-muted">{a.equipment}</span>}
+              </span>
+              <ChevronRight className="flex-none text-muted" />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

@@ -94,3 +94,20 @@ describe("groupScanByDay", () => {
     ]);
   });
 });
+
+describe("pickAlternatives", () => {
+  it("se queda con hasta 3 coincidencias seguras, sin el propio ejercicio ni repetidos", async () => {
+    const { pickAlternatives } = await import("../../src/lib/alternatives");
+    const match = createMatcher(entries);
+    const picked = pickAlternatives(match, "sentadilla-con-barra", [
+      { nameEs: "Sentadilla con barra", nameEn: "Barbell Squat" }, // el mismo: se descarta
+      { nameEs: "Extensión de cuádriceps", nameEn: "Leg Extensions" },
+      { nameEs: "Extensión de cuádriceps", nameEn: "Leg Extensions" }, // repetido
+      { nameEs: "Ejercicio inventado", nameEn: "Xyzzy Plugh" }, // no existe
+      { nameEs: "Aductores en máquina", nameEn: "Thigh Adductor" },
+      { nameEs: "Abdominales cortos", nameEn: "Crunches" },
+      { nameEs: "Elevación de talones de pie", nameEn: "Standing Calf Raises" }, // ya hay 3
+    ]);
+    expect(picked).toEqual(["extension-de-cuadriceps", "aductores-en-maquina", "abdominales-crunch"]);
+  });
+});

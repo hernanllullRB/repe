@@ -45,6 +45,7 @@ Toda la app está en español rioplatense ("apoyá", "bajá").
 | **Rutina** | Una lista de ejercicios que armás vos, con series y repeticiones opcionales. |
 | **Tildar** | Marcar un ejercicio de la rutina como hecho hoy. |
 | **Completar una rutina** | Tildar todos sus ejercicios. |
+| **Alternativa** | Otro ejercicio del catálogo que trabaja lo mismo con distinto equipamiento (por ejemplo, polea → mancuernas). |
 | **IA** | Inteligencia artificial (Gemini, de Google). La usamos para escribir las fichas, reconocer ejercicios nuevos y leer fotos de rutinas. |
 | **Sin cuenta / con cuenta** | Usar la app sin entrar, o habiendo entrado con Google. |
 
@@ -83,6 +84,9 @@ Cada ficha tiene:
 - **Cómo hacerlo:** entre 4 y 8 pasos.
 - **Recomendaciones** y **errores comunes** (cada error dice por qué es un problema y cómo corregirlo).
 - **Aviso de seguridad** breve. La ficha nunca da cargas, series ni consejos médicos.
+- **Alternativas:** hasta 3 ejercicios que reemplazan a este con **otro equipamiento** (por ejemplo, si es en polea, uno con mancuernas), para cuando la máquina está ocupada o no la hay. Cada una lleva a su ficha.
+  - Las propone la IA y **solo se muestran las que existen en el catálogo** de Repe. Si no hay ninguna, la sección no aparece.
+  - Se calculan una vez para todo el catálogo (no cuando el usuario abre la ficha). Los ejercicios nuevos creados desde el buscador no tienen alternativas hasta la próxima vez que se calculen.
 - El botón **Agregar a mi rutina** (ver [sección 7](#7-rutinas)).
 
 **Cuándo se escribe la ficha:** la primera vez que alguien abre un ejercicio sin ficha, la IA la escribe en ese momento (tarda unos segundos y se muestra "Preparando la ficha"). Queda guardada y nadie más la vuelve a generar. Si falla, se puede reintentar. Si se alcanzó el tope diario de la IA, la ficha se muestra con los datos básicos y se completa otro día.
@@ -236,3 +240,4 @@ Estos números se pueden cambiar sin tocar la app (son parte de la configuració
 - **Las fotos que fallan por un error de la IA cuentan** para el tope de 10 por día. *(Idea: no descontarlas.)*
 - **La rutina sugerida no sabe qué día de la semana es**: sigue el orden de la lista, no un calendario.
 - **No hay una pantalla para ver las fotos guardadas** para revisión; hoy se consultan con un comando (ver README).
+- **Las alternativas no se pueden elegir desde una rutina.** *(Idea: botón "cambiar por alternativa" en la rutina, para cuando la máquina está ocupada.)*
