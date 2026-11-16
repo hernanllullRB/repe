@@ -8,8 +8,9 @@ import type { routineBodySchema } from "./schemas";
 
 export type RoutineBody = z.infer<typeof routineBodySchema>;
 
-export interface RoutineDto extends RoutineBody {
+export interface RoutineDto extends Omit<RoutineBody, "lastCompletedAt"> {
   id: string;
+  lastCompletedAt: number | null;
   updatedAt: number;
 }
 
@@ -20,6 +21,7 @@ export function toDto(r: RoutineRow): RoutineDto {
     items: r.items,
     done: r.done,
     doneDay: r.doneDay,
+    lastCompletedAt: r.lastCompletedAt?.getTime() ?? null,
     updatedAt: r.updatedAt.getTime(),
   };
 }
@@ -53,12 +55,14 @@ export async function routineExists(userId: string, id: string): Promise<boolean
 export async function upsertRoutine(userId: string, id: string, body: RoutineBody, createdAt?: Date): Promise<RoutineDto> {
   const db = await getDb();
   const now = new Date();
+  const lastCompletedAt = body.lastCompletedAt ? new Date(body.lastCompletedAt) : null;
+  const data = { name: body.name, items: body.items, done: body.done, doneDay: body.doneDay, lastCompletedAt };
   const [row] = await db
     .insert(routines)
-    .values({ userId, id, ...body, createdAt: createdAt ?? now, updatedAt: now })
+    .values({ userId, id, ...data, createdAt: createdAt ?? now, updatedAt: now })
     .onConflictDoUpdate({
       target: [routines.userId, routines.id],
-      set: { name: body.name, items: body.items, done: body.done, doneDay: body.doneDay, updatedAt: now },
+      set: { ...data, updatedAt: now },
     })
     .returning();
   return toDto(row);

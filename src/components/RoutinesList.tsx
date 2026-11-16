@@ -16,6 +16,7 @@ export function RoutinesList() {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [loginError, setLoginError] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   // Con cacheComponents, Next oculta la página al navegar (<Activity>) en vez de
   // desmontarla: al salir se cierra el formulario y se borran los avisos.
@@ -24,6 +25,7 @@ export function RoutinesList() {
       setCreating(false);
       setName("");
       setLoginError(false);
+      setConfirmReset(false);
     },
     [],
   );
@@ -49,6 +51,7 @@ export function RoutinesList() {
   }
 
   const loggedIn = session.status === "user";
+  const hasProgress = list.some((r) => r.done.length > 0 || r.lastCompletedAt);
 
   return (
     <div className="flex flex-col gap-5">
@@ -134,6 +137,43 @@ export function RoutinesList() {
           Nueva rutina
         </button>
       )}
+
+      {hasProgress &&
+        (confirmReset ? (
+          <div className="flex flex-col gap-2.5 rounded-[18px] bg-soft p-3.5">
+            <p className="text-[14px] leading-normal">
+              Se borran los tildes y las rutinas completadas de todas tus rutinas, y la sugerencia vuelve a arrancar por
+              la primera. Los ejercicios no se tocan.
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  routines.resetAllProgress();
+                  setConfirmReset(false);
+                }}
+                className="press h-11 flex-1 rounded-xl bg-ink text-sm font-bold text-bg"
+              >
+                Sí, empezar de cero
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmReset(false)}
+                className="press h-11 rounded-xl px-4 text-sm font-semibold text-muted hover:text-ink"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirmReset(true)}
+            className="press flex h-[52px] items-center justify-center gap-2 rounded-2xl border border-line bg-surface text-base font-bold hover:bg-soft"
+          >
+            Empezar semana nueva
+          </button>
+        ))}
 
       {loggedIn ? (
         <Link

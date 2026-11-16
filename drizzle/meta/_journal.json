@@ -36,6 +36,13 @@
       "when": 1794795161700,
       "tag": "0004_scan_failures",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794797477475,
+      "tag": "0005_routine_last_completed",
+      "breakpoints": true
     }
   ]
 }

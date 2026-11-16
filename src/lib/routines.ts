@@ -28,6 +28,8 @@ export interface Routine {
   done: string[];
   /** Día (AAAA-MM-DD) al que corresponden los tildes. */
   doneDay: string | null;
+  /** Última vez (ms) que se tildaron todos sus ejercicios. */
+  lastCompletedAt?: number | null;
   updatedAt: number;
 }
 
@@ -128,6 +130,7 @@ function payload(r: Routine) {
     items,
     done: r.done.filter((s) => items.some((i) => i.slug === s)),
     doneDay: r.doneDay && /^\d{4}-\d{2}-\d{2}$/.test(r.doneDay) ? r.doneDay : null,
+    lastCompletedAt: r.lastCompletedAt ?? null,
   };
 }
 
@@ -371,13 +374,51 @@ export const routines = {
   toggleDone(id: string, slug: string) {
     update(id, (r) => {
       const done = r.done.includes(slug) ? r.done.filter((s) => s !== slug) : [...r.done, slug];
-      return { ...r, done, doneDay: today() };
+      // Al tildar el último ejercicio, la rutina queda completada.
+      const complete = r.items.length > 0 && r.items.every((i) => done.includes(i.slug));
+      return { ...r, done, doneDay: today(), lastCompletedAt: complete ? Date.now() : r.lastCompletedAt };
     });
   },
   resetDone(id: string) {
     update(id, (r) => ({ ...r, done: [], doneDay: null }));
   },
+  /** Semana nueva: borra tildes y completadas de todas las rutinas (la sugerencia vuelve a la primera). */
+  resetAllProgress() {
+    const now = Date.now();
+    const changed = all().filter((r) => r.done.length > 0 || r.doneDay || r.lastCompletedAt);
+    if (changed.length === 0) return;
+    const ids = new Set(changed.map((r) => r.id));
+    commit(
+      all().map((r) => (ids.has(r.id) ? { ...r, done: [], doneDay: null, lastCompletedAt: null, updatedAt: now } : r)),
+      [...ids],
+    );
+  },
 };
+
+/**
+ * Rutina para sugerir en el inicio:
+ * 1. Una a medias hoy (con algo tildado, sin terminar): para seguirla.
+ * 2. La siguiente (en el orden de la lista) a la última completada; después de la última, la primera.
+ * 3. Si nunca se completó ninguna, la primera.
+ * Solo cuentan las rutinas con ejercicios.
+ */
+export function suggestRoutine(list: Routine[]): { routine: Routine; reason: "in-progress" | "next" | "first" } | null {
+  const withItems = list.filter((r) => r.items.length > 0);
+  if (withItems.length === 0) return null;
+  const doneCount = (r: Routine) => r.done.filter((s) => r.items.some((i) => i.slug === s)).length;
+
+  const inProgress = withItems
+    .filter((r) => doneCount(r) > 0 && doneCount(r) < r.items.length)
+    .sort((a, b) => b.updatedAt - a.updatedAt)[0];
+  if (inProgress) return { routine: inProgress, reason: "in-progress" };
+
+  let last = -1;
+  withItems.forEach((r, i) => {
+    if (r.lastCompletedAt && (last === -1 || r.lastCompletedAt > (withItems[last].lastCompletedAt ?? 0))) last = i;
+  });
+  if (last === -1) return { routine: withItems[0], reason: "first" };
+  return { routine: withItems[(last + 1) % withItems.length], reason: "next" };
+}
 
 /** "4 × 10-12", "4 series", "10-12 rep." o null. */
 export function doseLabel(item: Pick<RoutineItem, "sets" | "reps">): string | null {

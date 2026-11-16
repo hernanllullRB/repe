@@ -2,6 +2,8 @@
 
 Buscador de ejercicios de gimnasio: escribís "press arnold" y llegás a una ficha con video, qué músculos trabaja, cómo hacerlo, recomendaciones y errores comunes.
 
+> **¿Cómo debe funcionar la app?** Las reglas de negocio, explicadas para alguien no técnico, están en [docs/funcionamiento.md](docs/funcionamiento.md). Si cambiás un comportamiento, actualizalo ahí también.
+
 Stack: Next.js 16 (App Router, Cache Components) + TypeScript + Tailwind CSS 4, Postgres con Drizzle ORM (Neon en producción, PGlite local en desarrollo), Vercel AI SDK con Gemini y YouTube Data API.
 
 ## Arrancar en tu máquina (Windows, macOS o Linux)

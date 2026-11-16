@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRoutines } from "@/lib/routines";
+import { suggestRoutine, useRoutines } from "@/lib/routines";
 import { ChevronRight, ListIcon } from "./icons";
 import { RoutineThumbs } from "./RoutineThumbs";
 
@@ -17,16 +17,15 @@ export function RoutinesButton() {
   );
 }
 
-/** Tarjeta para seguir con la rutina de hoy (la que tiene ejercicios tildados, o la última usada). */
+/** Tarjeta con la rutina sugerida para hoy: la que está a medias, la siguiente a la última completada o la primera. */
 export function ResumeRoutine() {
   const list = useRoutines();
   if (!list) return null;
-  const withItems = list.filter((r) => r.items.length > 0);
-  if (withItems.length === 0) return null;
-  const inProgress = withItems.filter((r) => r.done.length > 0 && r.done.length < r.items.length);
-  const r = (inProgress.length ? inProgress : withItems).sort((a, b) => b.updatedAt - a.updatedAt)[0];
+  const suggestion = suggestRoutine(list);
+  if (!suggestion) return null;
+  const r = suggestion.routine;
   const done = r.done.filter((s) => r.items.some((i) => i.slug === s)).length;
-  const started = done > 0;
+  const started = suggestion.reason === "in-progress";
 
   return (
     <Link
@@ -41,9 +40,9 @@ export function ResumeRoutine() {
         <span className="text-xs opacity-75">
           {started
             ? `${done} de ${r.items.length} ejercicios hechos`
-            : r.items.length === 1
-              ? "1 ejercicio"
-              : `${r.items.length} ejercicios`}
+            : `${suggestion.reason === "next" ? "Te toca hoy · " : ""}${
+                r.items.length === 1 ? "1 ejercicio" : `${r.items.length} ejercicios`
+              }`}
         </span>
       </span>
       <span className="inline-flex h-9 w-9 flex-none items-center justify-center rounded-full bg-accent text-accent-ink">

@@ -112,6 +112,8 @@ export const routineBodySchema = z.object({
   items: z.array(routineItemSchema).max(60),
   done: z.array(z.string().max(120)).max(60),
   doneDay: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  /** Milisegundos desde 1970 de la última vez que se completó. */
+  lastCompletedAt: z.number().int().positive().nullable().optional(),
 });
 
 /** Cuerpo de POST /api/routines/import (rutinas del navegador al iniciar sesión). */

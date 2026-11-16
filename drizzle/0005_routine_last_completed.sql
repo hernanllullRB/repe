@@ -1,0 +1,1 @@
+ALTER TABLE "routines" ADD COLUMN "last_completed_at" timestamp with time zone;

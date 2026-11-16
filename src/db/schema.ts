@@ -101,6 +101,8 @@ export const routines = pgTable(
     items: jsonb("items").$type<RoutineItemData[]>().notNull().default([]),
     done: text("done").array().notNull().default([]),
     doneDay: text("done_day"),
+    /** Última vez que se tildaron todos sus ejercicios (para recomendar la siguiente). */
+    lastCompletedAt: timestamp("last_completed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
